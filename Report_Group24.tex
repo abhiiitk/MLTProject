@@ -1,0 +1,262 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LaTeX Example: Project Report
+%
+% Source: http://www.howtotex.com
+%
+% Feel free to distribute this example, but please keep the referral
+% to howtotex.com
+% Date: March 2011 
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Written by Abhishek Srivastava and Nalin Dhameliya
+%
+%%% Preamble
+\documentclass[paper=a4, fontsize=11pt]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage{fourier}
+
+\usepackage[english]{babel}															% English language/hyphenation
+\usepackage[protrusion=true,expansion=true]{microtype}	
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[pdftex]{graphicx}	
+\usepackage{url}
+\usepackage{float}
+
+%%% Custom sectioning
+\usepackage{sectsty}
+\allsectionsfont{\centering \normalfont\scshape}
+
+
+%%% Custom headers/footers (fancyhdr package)
+\usepackage{fancyhdr}
+\pagestyle{fancyplain}
+\fancyhead{}											% No page header
+\fancyfoot[L]{}											% Empty 
+\fancyfoot[C]{}											% Empty
+\fancyfoot[R]{\thepage}									% Pagenumbering
+\renewcommand{\headrulewidth}{0pt}			% Remove header underlines
+\renewcommand{\footrulewidth}{0pt}				% Remove footer underlines
+\setlength{\headheight}{13.6pt}
+
+
+%%% Equation and float numbering
+\numberwithin{equation}{section}		% Equationnumbering: section.eq#
+\numberwithin{figure}{section}			% Figurenumbering: section.fig#
+\numberwithin{table}{section}				% Tablenumbering: section.tab#
+
+
+%%% Maketitle metadata
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\title{
+		%\vspace{-1in} 	
+		\usefont{OT1}{bch}{b}{n}
+		\normalfont \normalsize \textsc{Machine Learning Techniques CS771A} \\ [20pt]
+		\horrule{0.5pt} \\[0.4cm]
+		\huge Classification of Objects in Surveillance Video \\
+		\horrule{2pt} \\[0.5cm]
+}
+\author{
+		\normalfont 								\LARGE Abhishek Srivastava (12033)\\
+\LARGE Aditya Raj (12049)\\
+\LARGE Nalin Dhameliya (12431)\\
+\LARGE Vikrant Singh (12805)\\
+\LARGE \textbf{Group 24}\\
+	%\large
+       % \today
+}
+%\date{}
+
+
+%%% Begin document
+\begin{document}
+\maketitle
+\section{\textbf{Introduction}}
+In today's world, objects identification and classification in videos is the most important area of interest in the field of image processing. In this project, we do classification of objects in surveillance video based on various available machine learning techniques. We divide the project into 2-parts:
+\begin{itemize} \setlength\itemsep{-3pt}
+\item Background / foreground separation 
+\item Classification of objects into person, cycle, bicycle, motorcycle, car etc. \\
+\end{itemize}
+In the following sections we explain how do we use mixture of gaussian for background/ foreground separation and Histogram of Oriented Gradient (HOG) \& Scale-Invariant Feature Transform (SIFT) for feature extraction. We also used the feature combination as follows:
+\begin{itemize} \setlength\itemsep{-3pt}
+\item HOG
+\item SIFT
+\item HOG+SIFT
+\end{itemize}
+We perform classification task by using many machine learning algorithms. We also perform binary class and multiclass classification. At the end we present the results and conclusion based on output.
+
+\section{\textbf{Methodology}}
+\subsection*{\textbf{Background/Foreground Separation} }
+\noindent Background subtraction is an important preprocessing step in almost all vision based algorithms. In our project, we need to extract moving foreground before classification task. We used Mixture of Gaussian method available in OpenCV for this task. It uses a method to model each background pixel by a mixture of appropriate number of Gaussian distributions (K = 3 to 5). The weights of the mixture represent the time proportions that those colours stay in the scene. The probable background colours are the ones which stay longer and more static. Then the pixels which do not match to these are called the foreground pixels. \\
+
+\noindent Difficulties we face includes shadows of the objects that was also moving and reflecting itself in foreground. It had to be removed for correct classification. This method takes care of this thing. One more problem we faced was noise in the foreground, in order to remove noise we used morphological transformations. Moreover, we tuned the parameter of function like length of history and threshold to get a nearly perfect binary foreground.  
+
+\subsection*{\textbf{Frame Selection}}
+
+\noindent For every Object we selected 10 random frames from the list of all frames which are not occluded and lost. If the No of frames was less than 10, we selected all. We then sorted the images by their frame numbers for every Video. This was done for All the objects in training and testing test. The total number of items in training set coming from seven videos was 10815 and in the test data, it was 1884.
+
+\subsection*{ \textbf{Frame Extraction}}
+
+\noindent We calculated the aspect ratio by taking the ratio of horizontal width to vertical height for every labeled box. We Cropped the image of labeled object using corner points provided in labeling file and then converted the RGB image into Gray-scale. Then we extracted SIFT key-points which is described in next paragraph. Then we re sized it into 100 x 100 so that we can generate equal number of Histogram of Gradients.
+
+\subsection*{ \textbf{Scale-Invariant Feature Transform}}
+
+\noindent Scale-invariant feature transform was proposed by David Lowe in 1999. Because the distance and orientation from camera changes the scale and rotation of the image, there was need to extract features which are invariant with scale, rotation and transformation. We used SIFT implementation from OpenCV which takes two parameters named contrast Threshold and edge Threshold. These are needed to get the proper number of key-points. If the intensity at the extrema of key-point is less than contrast Threshold, the key-point is rejected. Because the key-points generation is very much sensitive to presence of edges, we need to take this into account. Concepts similar to Harris corner detector is used by software to calculate principal curvature in form of 2x2 matrix. If the ratio of larger eigenvalue to smaller eigenvalue is greater than edge Threshold, the key-point is rejected.  \\
+
+\noindent \textbf{Problems Faced:} Due to RAM limitations of 8Gb, we decided to tune our parameters so as to have total No of key-points coming from training data-set in our processing limitations. We faced two problems in this. One was the number of key-points was much larger whenever tree leaves and branches were coming into the boundary box of object. Second was the of vehicles with glasses mainly on Auto-Rickshaw and Car, on which colored reflection of these tree leaves occur resulting in huge number of key-points. Setting parameters to minimize these resulted in lesser number of key-points and even zero in many cases. \\
+
+\noindent \textbf{K-means Clustering:} As the number of key-points coming from every image are not equal, we needed to have Bag of Words implementation to generate the feature set for every image. We took 150,000 random key-points from the training data and trained k-means using 100 clusters. The number of keypoints and No of cluster were taken due to limitations on processing time and RAM. Using the fitted k-means model, we predicted the clusters for every key-point and then generated Bag of Words feature vectors to be used in training and testing. \\
+
+\noindent \textbf{Parameters Used in SIFT:}
+\begin{itemize} \setlength\itemsep{-5pt}
+\item Contrast-Threshold		:	0.08
+\item Edge-Threshold 		:	 4 
+\end{itemize}
+
+\subsection*{\textbf{Histogram of Oriented Gradients}}
+Histogram of Oriented Gradient (HOG) is a feature descriptor used in image processing for purpose of object detection. It is introduced by Dalal and Triggs. The method is based on evaluating well-normalized local histograms of image gradient orientations in a dense grid. It captures gradient structures that are characteristic of local shape. This is window based descriptor. This descriptor is made up of N x N cells converting image windows into a grid. Within each cell of the grid a frequency histogram is computed representing the distribution of edge orientations within the cell i.e. HOG method finds gradient orientations on a dense grid of uniformly spaced cells on an image, and quantises gradients into histogram bins. Note that in SIFT we look at local descriptor but in HOG we look at global descriptor.\\
+
+In HOG we compute centered horizontal and vertical gradient i.e. change in X and Y direction. We are interested in finding the direction of gradient and magnitude. Let Sx and Sy are magnitude of gradient in X and Y direction respectively. From above we compute magnitude of gradient and direction as below:\\
+
+\noindent Magnitude:  $\quad S \quad= \quad(S_x^2 + S_y^2)^ {1/2}$\\
+Orientation: $\quad \theta \quad= \quad arctan([S_y/S_x])$\\
+
+\noindent In this project we resized each image into 100 x 100 and divide it into 5*5 blocks of 50\% overlap 9 x 9 = 81 blocks in total. We obtain value of cells per block and pixels per cell by analyzing the all possible combination of it. Each block should consist of 2 x 2 cells with pixels per cell 10 x 10. We quantize the gradient orientation into 9 bins (0 degree - 180 degree). Final feature vector is a 1D matrix of length 1 x 2916 with each entry as 9-bin histogram. Note that each block in image show a histogram. Also maximum peak in the histogram is correspond to dominating direction of edge. \\
+
+\noindent \textbf{Parameters Used in HOG:}
+\begin{itemize} \setlength\itemsep{-5pt}
+\item Re-sized Gray-scale Image Size 	: 	100 x 100
+\item Orientations  \hspace{2.82cm}	: 	9
+\item Pixels\_per\_cell		\hspace{2.47cm}	:	(10, 10)
+\item Cells\_per\_block		\hspace{2.32cm}	:	(2, 2)
+\end{itemize}
+
+\section{\textbf{Data Summary of Selected Image Frames}}
+
+Training Data ( Using \textit{datasample1.mov, dec21h1330.dav, input\_video\_sample1.mov, input\_video\_ sample2.mov, input\_video\_sample3.mov, nov92015-1.dav and nov92015-2.dav})\\
+Testing Data (Using \textit{videosample5.mov})
+
+
+\begin{table}[!htbp] \centering 
+  \caption{Count of Objects in selected frames} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}} ccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Label & Training Data & Testing Data \\ 
+\hline \\[-1.8ex] 
+Person & $2,631$ & $490$ \\ 
+Motorcycle & $3,753$ & $638$ \\ 
+Car & $806$ & $140$ \\ 
+Bicycle & $3,023$ & $346$ \\ 
+Rickshaw & $311$ & $71$ \\ 
+Autorickshaw & $291$ & $199$ \\ 
+Total & $10,815$ & $1,884$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+
+\section{\textbf{Procedure}}
+We have used following three types of combination of feature extraction. In addition we used Aspect Ratio of Image frame as a feature.
+\begin{enumerate} \setlength\itemsep{-5pt}
+\item HOG: In this we used only feature extracted by HOG descriptor.
+\item SIFT: In this we used feature extracted by SIFT.
+\item SIFT + HOG: We combined the feature extracted by HOG and SIFT
+\end{enumerate}
+We have used following machine learning techniques and analyse the output: 
+
+\begin{enumerate} \setlength\itemsep{-5pt}
+\item AdaBoost
+\item  Bagging 
+\item Decision Tree 
+\item Gradient Boosting 
+\item Random Forest
+\item Linear Support Vector Classification (svm.LinearSVC)
+\item Nu-Support Vector Classification (svm.NuSVC) with Nu = 0.1
+\item C-Support Vector Classification  (svm.SVC)
+
+\end{enumerate}
+\subsection{ \textbf{Classification Rule } }
+\begin{enumerate}
+\item \textbf{Binary Classification:} In this we assume only two classes. One class is Person and other class include car, bicycle, motorcycle etc objects. 
+\item \textbf{Multiclass Classification:} In this we assume each object represents a separate class, so here number of classes is exactly same as number of labeled objects in dataset.
+\end{enumerate}
+
+
+
+\section{\textbf{Results \& Conclusions}}
+The labels for classification of different  moving objects in video has been given in two ways. First we have done binary classification in which persons are treated as one label and all other vehicles as the other one. In second case we do multiclass labeling, in which different types of vehicle such as Bicycle, Motorcycle, Rickshaw, Auto-Rickshaw, Car are given different labels. Out of all the frames for each ID in a video randomly 15 frames have been selected for training, thereby capturing all the necessary information without using too much data. We have trained using three sets of features: 
+\begin{enumerate} \setlength\itemsep{-4pt}
+\item Only SIFT features of size 100 each
+\item HOG features of size 2196 each
+\item Both SIFT and HOG features simultaneously. 
+\end{enumerate}
+Then we have used different machine learning algorithms for training and subsequent testing. In this work, three different sklearn SVM algorithms (svm Linear SVC, svm Nu SVC, svm SVC), decision tree, Random decision forest and ensemble methods(Adaboost , Gradient Boosting, Bagging) have been tried.\\
+
+
+\begin{table}[H]\centering 
+  \caption{\textbf{Binary Classification Accuracy}} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}} cccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Techniques & SIFT (\%) & HOG (\%)  & SIFT+ HOG (\%) \\ 
+\hline \\[-1.8ex] 
+Adaboost & $77.02$ & $86.99$ & $87.53$ \\ 
+Bagging & $76.91$ & $84.66$ & $85.20$ \\ 
+Decision Tree & $68.47$ & $79.09$ & $78.82$ \\ 
+Gradient Boosting & $76.75$ & $87.42$ & $87.15$ \\ 
+Random Forest & $78.93$ & $85.99$ & $85.99$ \\ 
+svm Linear SVC  & $78.82$ & $86.25$ & $86.20$ \\ 
+svm Nu SVC & $68.74$ & $83.55$ & $84.98$ \\ 
+svm SVC & $76.22$ & $73.99$ & $73.46$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+
+
+\begin{table}[H] \centering 
+  \caption{\textbf{Multiclass Classification Accuracy }} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}} cccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Techniques & SIFT (\%) & HOG (\%)  & SIFT+ HOG (\%) \\
+\hline \\[-1.8ex] 
+Adaboost & $41.62$ & $59.24$ & $61.73$ \\ 
+Bagging & $45.17$ & $60.08$ & $60.46$ \\ 
+Decision Tree & $37.63$ & $46.60$ & $47.19$ \\ 
+Gradient Boosting & $48.09$ & \textbf{$72.19$} & $72.19$ \\ 
+Random Forest & $44.32$ & $64.65$ & $63.48$ \\ 
+svm Linear SVC  & $45.33$ & $69.06$ & $70.22$ \\ 
+svm Nu SVC & $39.49$ & $61.57$ & $64.07$ \\ 
+svm SVC & $45.44$ & $41.30$ & $53.18$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+
+\noindent For both binary binary and multi-label classification, HOG gives better result than SIFT. Using both features simultaneously affects the accuracy by only about 0.5-1 \%. Amongst different machine learning algorithms used, gradient boosting and Adaboost gave best performance in case of both binary and multi-label classification.\\
+
+\noindent The accuracy in case of SIFT features depends on BOW representation used. We have used the vector size of 100 in this case. Its accuracy can be increased if larger number  of clusters are used. Also some keypoints which are outliers in clustering affect the accuracy as they don't capture the features truly.\\
+
+\noindent From above we observed that output of HOG is better as compared to output of SIFT. Also performance of (HOG+SHIFT) is slightly better than HOG or SIFT individually. Note that output of SIFT also depend on dimension of BOW vector. 
+
+
+
+
+\pagebreak
+\begin{thebibliography}{3}
+\bibitem{one} Navneet Dalal and Bill Triggs. \textit {Histograms of Oriented Gradients for Human Detection}. INRIA Rhone-Alps, 655 avenue de l'Europe, Montbonnot 38334, France.
+
+\bibitem{Two} David G. Lowe. \textit {Object Recognition from Local Scale-Invariant Features}. Proc. of the International Conference on
+Computer Vision, Corfu (Sept. 1999).
+
+\bibitem{Two} Bradski, G. \textit{opencv$\_$library}. Dr. Dobb's Journal of Software Tools, 2000.
+
+\bibitem{Two} Pedregosa, F. and Varoquaux, G. and Gramfort, A. and Michel, V. and Thirion, B. and Grisel, O. and Blondel, M. and Prettenhofer, P. and Weiss, R. and Dubourg, V. and Vanderplas, J. and Passos, A. and Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E. \textit {Scikit-learn: Machine Learning in {P}ython}. Journal of Machine Learning Research 12 (2011) 2825--2830.
+
+
+\end{thebibliography}
+
+
+\end{document}
